@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AWS Service Monitor - Bharani</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f2f4f8;
+            text-align: center;
+        }
+        .card {
+            display: inline-block;
+            width: 200px;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .green { color: green; }
+        .red { color: red; }
+        canvas {
+            max-width: 600px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+
+<h1>AWS Monitoring Dashboard</h1>
+<p>By Bharani</p>
+
+<div class="card">
+    <h3>EC2</h3>
+    <p id="ec2">Loading...</p>
+</div>
+
+<div class="card">
+    <h3>S3 Buckets</h3>
+    <p id="s3">Loading...</p>
+</div>
+
+<div class="card">
+    <h3>RDS</h3>
+    <p id="rds">Loading...</p>
+</div>
+
+<h2>Status History</h2>
+<canvas id="historyChart"></canvas>
+
+<script>
+let history = {
+    labels: [],
+    ec2: [],
+    s3: []
+};
+
+const ctx = document.getElementById("historyChart").getContext("2d");
+const chart = new Chart(ctx, {
+    type: "line",
+    data: {
+        labels: history.labels,
+        datasets: [
+            {
+                label: "EC2 Running (1 = Running)",
+                data: history.ec2,
+                borderColor: "green",
+                fill: false
+            },
+            {
+                label: "S3 Bucket Count",
+                data: history.s3,
+                borderColor: "blue",
+                fill: false
+            }
+        ]
+    }
+});
+
+async function loadStatus() {
+    const response = await fetch("/status");
+    const data = await response.json();
+
+    document.getElementById("ec2").innerHTML = data.ec2.length > 0
+        ? "<span class='green'>RUNNING</span>"
+        : "<span class='red'>STOPPED</span>";
+
+    document.getElementById("s3").innerText = data.s3;
+    document.getElementById("rds").innerText = data.rds.length;
+
+    if (history.labels.length > 10) {
+        history.labels.shift();
+        history.ec2.shift();
+        history.s3.shift();
+    }
+
+    history.labels.push(new Date().toLocaleTimeString());
+    history.ec2.push(data.ec2.length > 0 ? 1 : 0);
+    history.s3.push(data.s3);
+
+    chart.update();
+}
+
+loadStatus();
+setInterval(loadStatus, 10000);
+</script>
+
+</body>
+</html>
