@@ -1,0 +1,35 @@
+from flask import Flask, jsonify, render_template
+import boto3
+from datetime import datetime
+
+app = Flask(__name__)
+
+ec2 = boto3.client("ec2")
+s3 = boto3.client("s3")
+rds = boto3.client("rds")
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/status")
+def status():
+    ec2_response = ec2.describe_instances()
+    instances = []
+
+    for r in ec2_response["Reservations"]:
+        for i in r["Instances"]:
+            instances.append(i["State"]["Name"])
+
+    s3_buckets = s3.list_buckets()["Buckets"]
+    rds_instances = rds.describe_db_instances()["DBInstances"]
+
+    return jsonify({
+        "ec2": instances,
+        "s3": len(s3_buckets),
+        "rds": [db["DBInstanceStatus"] for db in rds_instances],
+        "time": str(datetime.now())
+    })
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
