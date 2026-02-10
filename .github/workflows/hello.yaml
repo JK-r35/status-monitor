@@ -1,14 +1,18 @@
 name: hello world demo
+
 on:
   push:
     branches:
-    main
+      - main
 
 jobs:
   say-hello:
-     runs-on: ubuntu-latest
-     steps:
-       name: Checkout code
-       uses: action/checkout@v3
-       name: Print Hello
-       run: echo "hello,github actions!"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Print Hello
+        run: echo "hello, github actions!"
+
